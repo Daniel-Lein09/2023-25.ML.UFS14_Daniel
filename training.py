@@ -22,12 +22,14 @@ def model_run(
         X = df[df.columns[2:-1]]
         y = df['diagnosis']
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=101)
-
+        X_to_split, X_test, y_to_split, y_test = train_test_split(X, y, test_size=0.15, random_state=101)
+        X_train, X_val, y_train, y_val = train_test_split(X_to_split, y_to_split, test_size=0.15, random_state=101)
+        
         scaler = MinMaxScaler()
         scaler.fit(X_train)
         X_train = scaler.transform(X_train)
         X_test = scaler.transform(X_test)
+        X_val = scaler.transform(X_val)
 
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(30, activation='relu'))
@@ -36,11 +38,12 @@ def model_run(
 
         model.compile(loss='binary_crossentropy', optimizer='adam')
 
-        model.fit(x=X_train, y=y_train, epochs=100, validation_data=(X_test, y_test))
-
-        losses = pd.DataFrame(model.history.history)
-        # losses.plot()
+        model.fit(x=X_train, y=y_train, epochs=100, validation_data=(X_val, y_val))
         
+        print("Evaluate on test data")
+        results = model.evaluate(X_test, y_test, batch_size=128)
+        print("test loss, test acc:", results)
+
         model.save_weights(rf'{model_dir}/my_model_weights.weights.h5')
         model.save(rf'{model_dir}/my_model.keras')
 
